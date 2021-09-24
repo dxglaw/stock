@@ -25,7 +25,7 @@ if __name__ == '__main__':
                              charset="utf8") as db:
             db.autocommit(on=True)
             db.cursor().execute(" select 1 ")
-            print("########### db exists ###########")
+            print("----------- db exists -----------")
     except Exception as e:
         print("check  MYSQL_DB error and create new one :", e)
         # 检查数据库失败，

@@ -3,4 +3,4 @@
 mkdir -p /data/logs
 DATE=`date +%Y-%m-%d:%H:%M:%S`
 echo $DATE >> /data/logs/hourly.log
-
+# echo 'done' >> /data/logs/hourly.log

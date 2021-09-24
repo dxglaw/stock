@@ -50,14 +50,14 @@ def stock_a_filter_price(latest_price):
 ####### 3.pdf 方法。宏观经济数据
 # 接口全部有错误。只专注股票数据。
 def stat_all(tmp_datetime):
-
+    print('----', __file__ + ': 0: stat_all')
     datetime_str = (tmp_datetime).strftime("%Y-%m-%d")
     datetime_int = (tmp_datetime).strftime("%Y%m%d")
-    print("datetime_str:", datetime_str)
-    print("datetime_int:", datetime_int)
+    print("datetime_str:", datetime_str, "    datetime_int:", datetime_int)
 
     # 股票列表
     try:
+        print('----', __file__ + ': 1: stock_zh_a_spot_em')
         data = ak.stock_zh_a_spot_em()
         # print(data.index)
         # 解决ESP 小数问题。
@@ -68,7 +68,6 @@ def stat_all(tmp_datetime):
 
         data = data.loc[data["code"].apply(stock_a)].loc[data["name"].apply(stock_a_filter_st)].loc[
             data["latest_price"].apply(stock_a_filter_price)]
-        print(data)
         data['date'] = datetime_int  # 修改时间成为int类型。
 
         # 删除老数据。
@@ -77,7 +76,9 @@ def stat_all(tmp_datetime):
 
         data.set_index('code', inplace=True)
         data.drop('index', axis=1, inplace=True)
-        print(data)
+
+        print('data count: %s'%len(data))
+
         # 删除index，然后和原始数据合并。
         common.insert_db(data, "stock_zh_ah_name", True, "`date`,`code`")
     except Exception as e:
@@ -94,8 +95,8 @@ def stat_all(tmp_datetime):
     #
 
     try:
+        print('----', __file__ + ': 2: stock_sina_lhb_ggtj')
         stock_sina_lhb_ggtj = ak.stock_sina_lhb_ggtj(recent_day="5")
-        print(stock_sina_lhb_ggtj)
 
         stock_sina_lhb_ggtj.columns = ['code', 'name', 'ranking_times', 'sum_buy', 'sum_sell', 'net_amount', 'buy_seat',
                                        'sell_seat']
@@ -112,6 +113,8 @@ def stat_all(tmp_datetime):
         del_sql = " DELETE FROM `stock_sina_lhb_ggtj` where `date` = '%s' " % datetime_int
         common.insert(del_sql)
 
+        print('stock_sina_lhb_ggtj count: %s'%len(stock_sina_lhb_ggtj))
+
         common.insert_db(stock_sina_lhb_ggtj, "stock_sina_lhb_ggtj", True, "`date`,`code`")
 
     except Exception as e:
@@ -126,11 +129,8 @@ def stat_all(tmp_datetime):
     # 描述: 获取东方财富网-数据中心-大宗交易-每日统计
 
     try:
-
-        print("################ tmp_datetime : " + datetime_str)
-
+        print('----', __file__ + ': 3: stock_dzjy_mrtj')
         stock_dzjy_mrtj = ak.stock_dzjy_mrtj(start_date=datetime_str, end_date=datetime_str)
-        print(stock_dzjy_mrtj)
 
         stock_dzjy_mrtj.columns = ['index', 'trade_date', 'code', 'name', 'quote_change', 'close_price', 'average_price',
                                    'overflow_rate', 'trade_number', 'sum_volume', 'sum_turnover',
@@ -158,7 +158,7 @@ def stat_all(tmp_datetime):
         del_sql = " DELETE FROM `stock_dzjy_mrtj` where `date` = '%s' " % datetime_int
         common.insert(del_sql)
 
-        print(stock_dzjy_mrtj)
+        print('stock_dzjy_mrtj count: %s'%len(stock_dzjy_mrtj))
 
         common.insert_db(stock_dzjy_mrtj, "stock_dzjy_mrtj", True, "`date`,`code`")
 
