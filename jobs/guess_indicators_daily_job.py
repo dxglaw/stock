@@ -15,66 +15,66 @@ import stockstats
 def stat_all_lite_buy(tmp_datetime):
     datetime_str = (tmp_datetime).strftime("%Y-%m-%d")
     datetime_int = (tmp_datetime).strftime("%Y%m%d")
-    print("datetime_str:", datetime_str)
-    print("datetime_int:", datetime_int)
+    print("datetime_str:", datetime_str, "    datetime_int:", datetime_int)
+
 
     # K值在80以上，D值在70以上，J值大于90时为超买。
     # J大于100时为超买，小于10时为超卖。
     # 当六日指标上升到达80时，表示股市已有超买现象
     # 当CCI＞﹢100 时，表明股价已经进入非常态区间——超买区间，股价的异动现象应多加关注。
     sql_1 = """
-            SELECT `date`,`code`,`name`,`latest_price`,`quote_change`,`ups_downs`,`volume`,`turnover`,
-                 `amplitude`,`high`,`low`,`open`,`closed`,`quantity_ratio`,`turnover_rate`,`pe_dynamic`,`pb`,
-                 `kdjj`,`rsi_6`,`cci`
-            FROM stock_data.guess_indicators_daily WHERE `date` = %s 
-                        and kdjk >= 80 and kdjd >= 70 and kdjj >= 90  
+            SELECT `date`, `code`, `name`, `ups_downs`, `latest_price`, `open`, `high`, `low`, 
+                   `closed`, `volume`, `turnover_rate`, `turnover`, `pe_dynamic`, `pb`,
+                   `kdjj`,`rsi_6`,`cci`
+                   FROM `guess_indicators_daily` WHERE `date` = %s 
+                   and kdjk >= 80 and kdjd >= 70 and kdjj >= 100  and rsi_6 >= 80  and cci >= 100
     """  # and kdjj > 100 and rsi_6 > 80  and cci > 100 # 调整参数，提前获得股票增长。
 
     try:
         # 删除老数据。
-        del_sql = " DELETE FROM `stock_data`.`guess_indicators_lite_buy_daily` WHERE `date`= '%s' " % datetime_int
+        del_sql = " DELETE FROM `guess_indicators_lite_buy_daily` WHERE `date`= '%s' " % datetime_int
         common.insert(del_sql)
     except Exception as e:
-        print("error :", e)
+        print(__file__, " : ", "error :", e)
 
     data = pd.read_sql(sql=sql_1, con=common.engine(), params=[datetime_int])
     data = data.drop_duplicates(subset="code", keep="last")
-    print("######## stat_all_lite_buy len data ########:", len(data))
+    print("-------- len data --------:", len(data))
 
     try:
         common.insert_db(data, "guess_indicators_lite_buy_daily", False, "`date`,`code`")
     except Exception as e:
-        print("error :", e)
+        print(__file__, " : ", "error :", e)
 
 # 设置卖出数据。
 def stat_all_lite_sell(tmp_datetime):
     datetime_str = (tmp_datetime).strftime("%Y-%m-%d")
     datetime_int = (tmp_datetime).strftime("%Y%m%d")
-    print("datetime_str:", datetime_str)
-    print("datetime_int:", datetime_int)
+    print("datetime_str:", datetime_str, "    datetime_int:", datetime_int)
+
 
     # 超卖区：K值在20以下，D值在30以下为超卖区。一般情况下，股价有可能上涨，反弹的可能性增大。局内人不应轻易抛出股票，局外人可寻机入场。
     # J大于100时为超买，小于10时为超卖。
     # 当六日强弱指标下降至20时，表示股市有超卖现象
     # 当CCI＜﹣100时，表明股价已经进入另一个非常态区间——超卖区间，投资者可以逢低吸纳股票。
     sql_1 = """
-            SELECT `date`,`code`,`name`,`latest_price`,`quote_change`,`ups_downs`,`volume`,`turnover`,
-                 `amplitude`,`high`,`low`,`open`,`closed`,`quantity_ratio`,`turnover_rate`,`pe_dynamic`,`pb`,
-                 `kdjj`,`rsi_6`,`cci`
-                        FROM stock_data.guess_indicators_daily WHERE `date` = %s 
-                        and kdjk <= 20 and kdjd <= 30 and kdjj <= 10  
+            SELECT `date`, `code`, `name`, `ups_downs`, `latest_price`, `open`, `high`, `low`, 
+                   `closed`, `volume`, `turnover_rate`, `turnover`, `pe_dynamic`, `pb`,
+                   `kdjj`,`rsi_6`,`cci`
+                   FROM `guess_indicators_daily` WHERE `date` = %s 
+                   and kdjk <= 20 and kdjd <= 30 and kdjj <= 10  and rsi_6 <= 20  and cci <= -100
     """
 
     try:
         # 删除老数据。
-        del_sql = " DELETE FROM `stock_data`.`guess_indicators_lite_sell_daily` WHERE `date`= '%s' " % datetime_int
+        del_sql = " DELETE FROM `guess_indicators_lite_sell_daily` WHERE `date`= '%s' " % datetime_int
         common.insert(del_sql)
     except Exception as e:
         print("error :", e)
 
     data = pd.read_sql(sql=sql_1, con=common.engine(), params=[datetime_int])
     data = data.drop_duplicates(subset="code", keep="last")
-    print("######## stat_all_lite_sell len data ########:", len(data))
+    print("-------- len data --------:", len(data))
 
     try:
         common.insert_db(data, "guess_indicators_lite_sell_daily", False, "`date`,`code`")
@@ -85,44 +85,46 @@ def stat_all_lite_sell(tmp_datetime):
 def stat_all_batch(tmp_datetime):
     datetime_str = (tmp_datetime).strftime("%Y-%m-%d")
     datetime_int = (tmp_datetime).strftime("%Y%m%d")
-    print("datetime_str:", datetime_str)
-    print("datetime_int:", datetime_int)
+    print("datetime_str:", datetime_str, "    datetime_int:", datetime_int)
 
     try:
         # 删除老数据。
-        del_sql = " DELETE FROM `guess_indicators_daily` WHERE `date`= %s " % datetime_int
+        del_sql = "DELETE FROM `guess_indicators_daily` WHERE `date`= %s " % datetime_int
         common.insert(del_sql)
     except Exception as e:
         print("error :", e)
 
-    sql_count = """
-    SELECT count(1) FROM  stock_zh_ah_name WHERE `date` = %s and `open` > 0
-    """
-    # 修改逻辑，增加中小板块计算。 中小板：002，创业板：300 。已经是经过筛选的数据了。
-    count = common.select_count(sql_count, params=[datetime_int])
-    print("count :", count)
+    # 查询今日满足股票数据。剔除数据：创业板股票数据，中小板股票数据，所有st股票
+    # #`code` not like '002%' and `code` not like '300%'  and `name` not like '%st%'
+    sql_1 = """ 
+                SELECT `date`,`code`,`name`,`latest_price`,`quote_change`,`ups_downs`,`volume`,`turnover`,
+                        `amplitude`,`high`,`low`,`open`,`closed`,`quantity_ratio`,`turnover_rate`,`pe_dynamic`,`pb`
+                FROM stock_zh_ah_name WHERE `date` = %s and `open` > 0
+                """
+    print("Get a list of all stocks by sql_1:\n", sql_1)
+    stocks_list = pd.read_sql(sql=sql_1, con=common.engine(), params=[datetime_int])
+    stocks_list = stocks_list.drop_duplicates(subset="code", keep="last")
+    n_stocks = stocks_list.shape[0]
+    print("The number of stocks: ", n_stocks)
+
+    # the following statistics will be calculated. 
+    stock_column = ['adx', 'adxr', 'boll', 'boll_lb', 'boll_ub', 'cci', 'cci_20', 'close_-1_r',
+                    'close_-2_r', 'code', 'cr', 'cr-ma1', 'cr-ma2', 'cr-ma3', 'date', 'dma', 'dx',
+                    'kdjd', 'kdjj', 'kdjk', 'macd', 'macdh', 'macds', 'mdi', 'pdi',
+                    'rsi_12', 'rsi_6', 'trix', 'trix_9_sma', 'vr', 'vr_6_sma', 'wr_10', 'wr_6']
+    print("The following statistics will be calculated.")
+    print("    ", stock_column)
+
     batch_size = 100
-    end = int(math.ceil(float(count) / batch_size) * batch_size)
-    print(end)
-    for i in range(0, end, batch_size):
-        print("loop :", i)
-        # 查询今日满足股票数据。剔除数据：创业板股票数据，中小板股票数据，所有st股票
-        # #`code` not like '002%' and `code` not like '300%'  and `name` not like '%st%'
-        sql_1 = """ 
-                    SELECT `date`,`code`,`name`,`latest_price`,`quote_change`,`ups_downs`,`volume`,`turnover`,
-                            `amplitude`,`high`,`low`,`open`,`closed`,`quantity_ratio`,`turnover_rate`,`pe_dynamic`,`pb`
-                    FROM stock_zh_ah_name WHERE `date` = %s and `open` > 0  limit %s , %s
-                    """
-        print(sql_1)
-        # data = pd.read_sql(sql=sql_1, con=common.engine(), params=[datetime_int, '002%', '300%', '%st%', i, batch_size])
-        data = pd.read_sql(sql=sql_1, con=common.engine(), params=[datetime_int, i, batch_size])
-        data = data.drop_duplicates(subset="code", keep="last")
-        print("########data[latest_price]########:", len(data))
-        stat_index_all(data, i)
+    for i in range(0, n_stocks, batch_size):
+        stocks_list_this_batch = stocks_list[i:i+batch_size]
+        print("\n--------loop: ", i, ". The number of stocks in this loop: ", stocks_list_this_batch.shape[0])
+        stat_index_all(stocks_list_this_batch, i, stock_column)
 
 
 # 分批执行。
-def stat_index_all(data, idx):
+def stat_index_all(stocks_list, idx, stock_column):
+    #region All kinds of statistics
     # print(data["latest_price"])
     # 1), n天涨跌百分百计算
     # open price change (in percent) between today and the day before yesterday ‘r’ stands for rate.
@@ -205,19 +207,17 @@ def stat_index_all(data, idx):
     # http://wiki.mbalib.com/wiki/%E6%88%90%E4%BA%A4%E9%87%8F%E6%AF%94%E7%8E%87
     # 成交量比率（Volumn Ratio，VR）（简称VR），是一项通过分析股价上升日成交额（或成交量，下同）与股价下降日成交额比值，
     # 从而掌握市场买卖气势的中期技术指标。
+    #endregion
 
-    stock_column = ['adx', 'adxr', 'boll', 'boll_lb', 'boll_ub', 'cci', 'cci_20', 'close_-1_r',
-                    'close_-2_r', 'code', 'cr', 'cr-ma1', 'cr-ma2', 'cr-ma3', 'date', 'dma', 'dx',
-                    'kdjd', 'kdjj', 'kdjk', 'macd', 'macdh', 'macds', 'mdi', 'pdi',
-                    'rsi_12', 'rsi_6', 'trix', 'trix_9_sma', 'vr', 'vr_6_sma', 'wr_10', 'wr_6']
     # code     cr cr-ma1 cr-ma2 cr-ma3      date
-
-    data_new = concat_guess_data(stock_column, data)
+    print('....concat_guess_data start')
+    data_new = concat_guess_data(stocks_list, stock_column)
+    print('....concat_guess_data end')
 
     data_new = data_new.round(2)  # 数据保留2位小数
 
     # print(data_new.head())
-    print("########insert db guess_indicators_daily idx :########:", idx)
+    print("Insert db guess_indicators_daily idx for loop : ", idx)
     try:
         common.insert_db(data_new, "guess_indicators_daily", False, "`date`,`code`")
     except Exception as e:
@@ -225,30 +225,30 @@ def stat_index_all(data, idx):
 
 
 # 链接guess 数据。
-def concat_guess_data(stock_column, data):
+def concat_guess_data(stocks_list, stock_column):
     # 使用 trade 填充数据
-    print("stock_column:", stock_column)
     tmp_dic = {}
     # 循环增加临时数据。如果要是date，和code，
     for col in stock_column:
         if col == 'date':
-            tmp_dic[col] = data["date"]
+            tmp_dic[col] = stocks_list["date"]
         elif col == 'code':
-            tmp_dic[col] = data["code"]
+            tmp_dic[col] = stocks_list["code"]
         else:
-            tmp_dic[col] = data["latest_price"]
-    # print("##########tmp_dic: ", tmp_dic)
-    print("########################## BEGIN ##########################")
-    stock_guess = pd.DataFrame(tmp_dic, index=data.index.values)
-    print(stock_guess.columns.values)
+            tmp_dic[col] = stocks_list["latest_price"]
+    # print("----------tmp_dic: ", tmp_dic)
+    stock_guess = pd.DataFrame(tmp_dic, index=stocks_list.index.values)
+    # print(stock_guess.columns.values)
     # print(stock_guess.head())
+
     stock_guess = stock_guess.apply(apply_guess, stock_column=stock_column, axis=1)  # , axis=1)
     print(stock_guess.head())
+
     # stock_guess.astype('float32', copy=False)
     stock_guess.drop('date', axis=1, inplace=True)  # 删除日期字段，然后和原始数据合并。
     # print(stock_guess["5d"])
-    data_new = pd.merge(data, stock_guess, on=['code'], how='left')
-    print("#############")
+    data_new = pd.merge(stocks_list, stock_guess, on=['code'], how='left')
+
     return data_new
 
 
@@ -294,7 +294,7 @@ def apply_guess(tmp, stock_column):
     # stockStat = stockstats.StockDataFrame.retype(pd.read_csv('002032.csv'))
     stockStat = stockstats.StockDataFrame.retype(stock)
 
-    print("########################## print result ##########################")
+    # print("-------------------------- print result --------------------------")
     for col in stock_column:
         if col == 'date':
             stock_data_list.append(date)
