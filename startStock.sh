@@ -23,7 +23,7 @@ if [ $DB_IS_RUN -lt 2 ]; then
 
         ####################### 创建数据库 #######################
         docker run --name mysqldb -v ${PWD}/data/mysqldb/data:/var/lib/mysql --restart=always \
-        -e MYSQL_ROOT_PASSWORD=mysqldb -e MYSQL_DATABASE=stock_data -e TZ=Asia/Shanghai \
+        -e MYSQL_ROOT_PASSWORD=mysqldb -e MYSQL_DATABASE=pythonstock -e TZ=Asia/Shanghai \
         -p 3306:3306 -d mysql:5.7 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
         echo "starting mysqldb ..."
         echo "wait 60 second , mysqldb is starting ."
@@ -60,6 +60,7 @@ if [ $# == 1 ] ; then
     #  测试使用，自己需注册，申请：https://tushare.pro/user/token
 
     docker run -itd --link=mysqldb --name stock  \
+      -e 'MYSQL_USER'='pythonstock' -e 'MYSQL_PWD'='281208,,dxg' -e 'MYSQL_DB'='pythonstock' \
       -e LANG=zh_CN.UTF-8 -e LC_CTYPE=zh_CN.UTF-8 -e PYTHONIOENCODING=utf-8 \
       -p 8888:8888 -p 9999:9999 --restart=always \
       -v ${PWD}/jobs:/data/stock/jobs \
@@ -68,14 +69,15 @@ if [ $# == 1 ] ; then
       -v ${PWD}/supervisor:/data/supervisor \
       -v ${PWD}/notebooks:/data/notebooks \
       -v ${PWD}/data/logs:/data/logs \
-       pythonstock/pythonstock:latest
+       dxglaw/pythonstock:latest
     exit 1;
 else
     echo "############# run online ############# "
     # /data/stock 是代码目录 -v /data/stock:/data/stock 是开发模式。
     docker run -itd --link=mysqldb --name stock  \
+      -e 'MYSQL_USER'='pythonstock' -e 'MYSQL_PWD'='281208,,dxg' -e 'MYSQL_DB'='pythonstock' \
       -p 8888:8888 -p 9999:9999 --restart=always \
-       pythonstock/pythonstock:latest
+       dxglaw/pythonstock:latest
     exit 1;
 fi
 
