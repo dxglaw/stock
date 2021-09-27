@@ -12,6 +12,7 @@ import MySQLdb
 from sqlalchemy import create_engine
 from sqlalchemy.types import NVARCHAR
 from sqlalchemy import inspect
+import numpy as np
 import pandas as pd
 import traceback
 import akshare as ak
@@ -56,11 +57,11 @@ def conn():
 # 定义通用方法函数，插入数据库表，并创建数据库主键，保证重跑数据的时候索引唯一。
 def insert_db(data, table_name, write_index, primary_keys):
     # 插入默认的数据库。
-    insert_other_db(MYSQL_DB, data, table_name, write_index, primary_keys)
+    insert_other_db(MYSQL_DB, data, table_name, write_index, primary_keys, rename_columns=True)
 
 
 # 增加一个插入到其他数据库的方法。
-def insert_other_db(to_db, data, table_name, write_index, primary_keys):
+def insert_other_db(to_db, data, table_name, write_index, primary_keys, rename_columns=False):
     # 定义engine
     engine_mysql = engine_to_db(to_db)
     # 使用 http://docs.sqlalchemy.org/en/latest/core/reflection.html
@@ -71,7 +72,10 @@ def insert_other_db(to_db, data, table_name, write_index, primary_keys):
     if write_index:
         # 插入到第一个位置：
         col_name_list.insert(0, data.index.name)
-    print("    ", __file__, " : ", "insert_other_db : ", col_name_list)
+    # rename table column names if required
+    if rename_columns:
+        unify_db_table_name(to_db, table_name)
+    # insert data to db
     data.to_sql(name=table_name, con=engine_mysql, schema=to_db, if_exists='append',
                 dtype={col_name: NVARCHAR(length=255) for col_name in col_name_list}, index=write_index)
 
@@ -205,9 +209,140 @@ def get_hist_data_cache(code, date_start, date_end):
         stock.to_pickle(cache_file, compression="gzip")
         return stock
 
+# 600开头的股票是上证A股，属于大盘股
+# 600开头的股票是上证A股，属于大盘股，其中6006开头的股票是最早上市的股票，
+# 6016开头的股票为大盘蓝筹股；900开头的股票是上证B股；
+# 000开头的股票是深证A股，001、002开头的股票也都属于深证A股，
+# 其中002开头的股票是深证A股中小企业股票；
+# 200开头的股票是深证B股；
+# 300开头的股票是创业板股票；400开头的股票是三板市场股票。
+def stock_a(code):
+    # print(code)
+    # print(type(code))
+    # 上证A股  # 深证A股
+    if code.startswith('600') or code.startswith('6006') or code.startswith('601') or code.startswith('000') or code.startswith('001') or code.startswith('002'):
+        return True
+    else:
+        return False
+# 过滤掉 st 股票。
+def stock_a_filter_st(name):
+    # print(code)
+    # print(type(code))
+    # 上证A股  # 深证A股
+    if name.find("ST") == -1:
+        return True
+    else:
+        return False
+
+# 过滤价格，如果没有基本上是退市了。
+def stock_a_filter_price(latest_price):
+    # float 在 pandas 里面判断 空。
+    if np.isnan(latest_price):
+        return False
+    else:
+        return True
+
+def get_latest_stocks_list():
+    '''
+    Get a list of latest stocks.
+    '''
+    # all stocks of today
+    try:
+        print("    ", __file__, " : ", "get_latest_stocks_list()")
+        trade_day = get_recent_trade_day()
+        trade_day_int = trade_day.strftime("%Y%m%d")
+        print("    ", __file__, " : ", "Recent trade day is", trade_day_int)
+        # get all stocks of today
+        data = ak.stock_zh_a_spot_em()
+        data.columns = [unify_names(i) for i in data.columns]
+
+        data = data.loc[data[unify_names("code")].apply(stock_a)]\
+                   .loc[data[unify_names("name")].apply(stock_a_filter_st)]\
+                   .loc[data[unify_names("latest_price")].apply(stock_a_filter_price)]
+        data[unify_names("date")] = trade_day_int  # 修改时间成为int类型。
+
+        # 删除老数据。
+        del_sql = " DELETE FROM `stock_zh_ah_name` where `date` = '%s' " % trade_day_int
+        insert(del_sql)
+
+        data.set_index(unify_names("code"), inplace=True)
+        data.drop(unify_names("index"), axis=1, inplace=True)
+
+        print("    ", __file__, " : ", "Number of stocks is", len(data))
+
+        # 删除index，然后和原始数据合并。
+        insert_db(data, "stock_zh_ah_name", True, "`date`,`code`")
+        
+        # return data
+        return trade_day_int, data
+    except Exception as e:
+        print("error :", e)
+        return []
+
 def is_trade_day(year, month, day):
     this_date = datetime.date(year, month, day)
     return is_workday(this_date) and this_date.weekday()<5
+
+def get_recent_trade_day():
+    today = datetime.date.today()
+    one_day = datetime.timedelta(days=1)
+    while not is_trade_day(today.year, today.month, today.day):
+        today -= one_day
+    return today
+
+def unify_db_table_name(db_name, table_name):
+    '''
+    Change column names to unified names.
+    '''
+    # db engine
+    engine_mysql = engine_to_db(db_name)
+    # get a list of the column names in the table
+    all_column_names, all_column_types = get_column_names_types_from_table(db_name, table_name)
+    # change names
+    new_all_column_names = [unify_names(raw_name) for raw_name in all_column_names]
+    alter_db_table_name(db_name, table_name, all_column_names, new_all_column_names, all_column_types)
+
+def alter_db_table_name(db_name, table_name, old_names, new_names, col_types):
+    '''
+    Change a list of column names to new names in table_name of db_name
+    '''
+    # check input
+    n_columns = len(old_names)
+    if n_columns != len(new_names) or n_columns != len(col_types):
+        print('old_names, new_names and col_types have different numbers of columns.')
+        return False
+    # db engine
+    engine_mysql = engine_to_db(db_name)
+    # change names
+    sql = "ALTER TABLE `%s` CHANGE `%s` `%s` %s"
+    with engine_mysql.connect() as conn:
+        for i in range(n_columns):
+            this_sql = sql%(table_name, old_names[i], new_names[i], col_types[i])
+            try:
+                res = conn.execute(this_sql)
+            except  Exception as e:
+                print("    ", __file__, " : ", "alter_db_table_name : error :", e)
+                return False
+    return True
+
+def get_column_names_types_from_table(db_name, table_name):
+    '''
+    Get a list of the names of all the columns in the table_name in db_name
+    '''
+    column_names = []
+    column_types = []
+    sql = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'%s'"%table_name
+    engine_mysql = engine_to_db(db_name)
+    with engine_mysql.connect() as conn:
+        try:
+            res = conn.execute(sql)
+            res = res.fetchall()
+            column_names = [this_column[3] for this_column in res]
+            column_types = ['%s(%d)'%(this_column[7],this_column[8]) for this_column in res]
+        except  Exception as e:
+            print("    ", __file__, " : ", "get_column_names_from_table : error :", e)
+    return column_names, column_types
+
 
 def unify_names(raw_name):
     '''
@@ -228,10 +363,10 @@ def unify_names(raw_name):
         **dict.fromkeys(['涨跌额', 'ups_downs'], 'change'),
         **dict.fromkeys(['振幅', 'amplitude'], 'swing'),
         '成交量': 'volume',
-        '成交额': 'amount',
+        **dict.fromkeys(['成交额', 'turnover'], 'amount'),
         '成交均价': 'avg_price',
-        '量比': 'vol_ratio',
-        '换手率': 'turnover_ratio',
+        **dict.fromkeys(['量比', 'quantity_ratio'], 'vol_ratio'),
+        **dict.fromkeys(['换手率', 'turnover_rate'], 'turnover_ratio'),
         **dict.fromkeys(['市盈率-动态', '动态市盈率'], 'pe_dynamic'),
         '市净率': 'pb',
         '上榜次数': 'ranking_times',
@@ -252,4 +387,7 @@ def unify_names(raw_name):
         return raw_name
 
 if __name__ == '__main__':
-    print(is_trade_day(2021, 9, 17))
+    # print(is_trade_day(2021, 9, 17))
+    get_latest_stocks_list()
+
+
