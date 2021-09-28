@@ -30,6 +30,10 @@ print(MYSQL_CONN_URL)
 __version__ = "2.0.0"
 # 每次发布时候更新。
 
+# configurations
+TBL_NAME_DAILY_HIST = 'daily_hist'
+
+
 def engine():
     engine = create_engine(
         MYSQL_CONN_URL,
@@ -242,6 +246,46 @@ def stock_a_filter_price(latest_price):
     else:
         return True
 
+def get_daily_hist(code, start_date_int, stop_date_int):
+    '''
+    Get daily hist of one stock from start_date_int to stop_date_int.
+    '''
+    uname_date = unify_names("date")
+    uname_code = unify_names("code")
+    try:
+        # download
+        hist_daily = ak.stock_zh_a_hist(symbol=code,\
+                                        start_date=start_date_int,\
+                                        end_date=stop_date_int,\
+                                        adjust="")
+        # unify column names
+        hist_daily.columns = [unify_names(i) for i in hist_daily.columns]
+        # convert date format form yyyy-mm-dd to yyyymmdd
+        hist_daily[uname_date] = hist_daily[uname_date].apply(lambda x: x.replace("-", ""))
+        # add code
+        hist_daily[uname_code] = code
+        # set date as index
+        hist_daily.set_index(uname_date, inplace=True)
+    except  Exception as e:
+        print("    ", __file__, ": ak.stock_zh_a_hist():", e)
+    # insert to db
+    try:
+        # delete data already downloaded before
+        sql_del = "DELETE FROM `%s` WHERE `%s`=%s AND `%s`>=%s AND `%s`<=%s"
+        sql_cmd = sql_del%(TBL_NAME_DAILY_HIST,\
+                            uname_code,\
+                            code,\
+                            uname_date,\
+                            start_date_int,\
+                            uname_date,\
+                            stop_date_int)
+        insert(sql_cmd)
+        # insert complete data just downloaded
+        prim_keys = "`%s`,`%s`"%(uname_date, uname_code)
+        insert_db(hist_daily, TBL_NAME_DAILY_HIST, True, prim_keys)
+    except  Exception as e:
+        print("    ", __file__, ": insert_db():", e)
+
 def get_latest_stocks_list():
     '''
     Get a list of latest stocks.
@@ -249,7 +293,7 @@ def get_latest_stocks_list():
     # all stocks of today
     try:
         print("    ", __file__, " : ", "get_latest_stocks_list()")
-        trade_day = get_recent_trade_day()
+        trade_day = get_recent_trade_day(end_of_day=True)
         trade_day_int = trade_day.strftime("%Y%m%d")
         print("    ", __file__, " : ", "Recent trade day is", trade_day_int)
         # get all stocks of today
@@ -265,16 +309,16 @@ def get_latest_stocks_list():
         del_sql = " DELETE FROM `stock_zh_ah_name` where `date` = '%s' " % trade_day_int
         insert(del_sql)
 
-        data.set_index(unify_names("code"), inplace=True)
+        # delete index
         data.drop(unify_names("index"), axis=1, inplace=True)
 
         print("    ", __file__, " : ", "Number of stocks is", len(data))
 
         # 删除index，然后和原始数据合并。
-        insert_db(data, "stock_zh_ah_name", True, "`date`,`code`")
+        insert_db(data, "stock_zh_ah_name", False, "`date`,`code`")
         
         # return data
-        return trade_day_int, data
+        return trade_day, data
     except Exception as e:
         print("error :", e)
         return []
@@ -283,12 +327,33 @@ def is_trade_day(year, month, day):
     this_date = datetime.date(year, month, day)
     return is_workday(this_date) and this_date.weekday()<5
 
-def get_recent_trade_day():
-    today = datetime.date.today()
+def get_recent_trade_day(end_of_day=False):
+    '''
+    Get the recent trade day. If today is the trade day and hour<17, return previous trade day.
+    '''
+    today = datetime.datetime.now() 
     one_day = datetime.timedelta(days=1)
+    if end_of_day and today.hour < 17 :    # 
+        today -= one_day
     while not is_trade_day(today.year, today.month, today.day):
         today -= one_day
     return today
+
+def get_recent_trade_days(start_date, ndays=100):
+    '''
+    Get ndays trade days starting from start_date. start_date is the latest date.
+    start_date should be valid trade day. If not, an empty list will be returned.
+    '''
+    trade_days = []
+    if is_trade_day(start_date.year, start_date.month, start_date.day):
+        one_day = datetime.timedelta(days=1)
+        trade_days.append(start_date)
+        while len(trade_days) < ndays:
+            this_day = trade_days[-1] - one_day
+            while not is_trade_day(this_day.year, this_day.month, this_day.day):
+                this_day -= one_day
+            trade_days.append(this_day)
+    return trade_days
 
 def unify_db_table_name(db_name, table_name):
     '''
@@ -300,7 +365,8 @@ def unify_db_table_name(db_name, table_name):
     all_column_names, all_column_types = get_column_names_types_from_table(db_name, table_name)
     # change names
     new_all_column_names = [unify_names(raw_name) for raw_name in all_column_names]
-    alter_db_table_name(db_name, table_name, all_column_names, new_all_column_names, all_column_types)
+    if all_column_names != new_all_column_names:
+        alter_db_table_name(db_name, table_name, all_column_names, new_all_column_names, all_column_types)
 
 def alter_db_table_name(db_name, table_name, old_names, new_names, col_types):
     '''
@@ -317,12 +383,13 @@ def alter_db_table_name(db_name, table_name, old_names, new_names, col_types):
     sql = "ALTER TABLE `%s` CHANGE `%s` `%s` %s"
     with engine_mysql.connect() as conn:
         for i in range(n_columns):
-            this_sql = sql%(table_name, old_names[i], new_names[i], col_types[i])
-            try:
-                res = conn.execute(this_sql)
-            except  Exception as e:
-                print("    ", __file__, " : ", "alter_db_table_name : error :", e)
-                return False
+            if old_names[i] != new_names[i]:
+                this_sql = sql%(table_name, old_names[i], new_names[i], col_types[i])
+                try:
+                    res = conn.execute(this_sql)
+                except  Exception as e:
+                    print("    ", __file__, " : ", "alter_db_table_name : error :", e)
+                    return False
     return True
 
 def get_column_names_types_from_table(db_name, table_name):
@@ -388,6 +455,6 @@ def unify_names(raw_name):
 
 if __name__ == '__main__':
     # print(is_trade_day(2021, 9, 17))
-    get_latest_stocks_list()
-
-
+    # get_latest_stocks_list()
+    # unify_db_table_name('pythonstock', TBL_NAME_DAILY_HIST)
+    print(get_recent_trade_day(True))
