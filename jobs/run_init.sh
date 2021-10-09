@@ -11,13 +11,14 @@ mkdir -p /data/logs/tensorflow
 
 DATE=`date +%Y-%m-%d:%H:%M:%S`
 
+echo "" >> /data/logs/run_init.log
 echo $DATE >> /data/logs/run_init.log
 
-echo "###### Wait 120 second , mysqldb is starting ." >> /data/logs/run_init.log
+echo "###### Wait 120 second, mysqldb is starting ." >> /data/logs/run_init.log
 sleep 120
 
-echo "###### basic_job.py" >> /data/logs/run_init.log
-/usr/local/bin/python3 /data/stock/jobs/basic_job.py  >> /data/logs/run_init.log
+echo "###### init_job.py" >> /data/logs/run_init.log
+/usr/local/bin/python3 /data/stock/jobs/init_job.py  >> /data/logs/run_init.log
 
 echo "###### printenv" >> /data/logs/run_init.log
 # https://stackoverflow.com/questions/27771781/how-can-i-access-docker-set-environment-variables-from-a-cron-job
