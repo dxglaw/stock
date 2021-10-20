@@ -14,41 +14,10 @@ import akshare as ak
 
 import MySQLdb
 
-# 600开头的股票是上证A股，属于大盘股
-# 600开头的股票是上证A股，属于大盘股，其中6006开头的股票是最早上市的股票，
-# 6016开头的股票为大盘蓝筹股；900开头的股票是上证B股；
-# 000开头的股票是深证A股，001、002开头的股票也都属于深证A股，
-# 其中002开头的股票是深证A股中小企业股票；
-# 200开头的股票是深证B股；
-# 300开头的股票是创业板股票；400开头的股票是三板市场股票。
-def stock_a(code):
-    # print(code)
-    # print(type(code))
-    # 上证A股  # 深证A股
-    if code.startswith('600') or code.startswith('6006') or code.startswith('601') or code.startswith('000') or code.startswith('001') or code.startswith('002'):
-        return True
-    else:
-        return False
-# 过滤掉 st 股票。
-def stock_a_filter_st(name):
-    # print(code)
-    # print(type(code))
-    # 上证A股  # 深证A股
-    if name.find("ST") == -1:
-        return True
-    else:
-        return False
 
-# 过滤价格，如果没有基本上是退市了。
-def stock_a_filter_price(latest_price):
-    # float 在 pandas 里面判断 空。
-    if np.isnan(latest_price):
-        return False
-    else:
-        return True
 
 def get_all_stocks(tmp_datetime):
-    print('----', __file__ + ': 0: stat_all')
+    print('----', __file__ + ': 0: get_all_stocks')
     datetime_str = (tmp_datetime).strftime("%Y-%m-%d")
     datetime_int = (tmp_datetime).strftime("%Y%m%d")
     print("datetime_str:", datetime_str, "    datetime_int:", datetime_int)
@@ -63,9 +32,9 @@ def get_all_stocks(tmp_datetime):
         # data["esp"] = data["esp"].round(2)  # 数据保留2位小数
         data.columns = [common.unify_names(i) for i in data.columns]
 
-        data = data.loc[data[common.unify_names("code")].apply(stock_a)]\
-                   .loc[data[common.unify_names("name")].apply(stock_a_filter_st)]\
-                   .loc[data[common.unify_names("latest_price")].apply(stock_a_filter_price)]
+        data = data.loc[data[common.unify_names("code")].apply(common.stock_a)]\
+                   .loc[data[common.unify_names("name")].apply(common.stock_a_filter_st)]\
+                   .loc[data[common.unify_names("latest_price")].apply(common.stock_a_filter_price)]
         data[common.unify_names("date")] = datetime_int  # 修改时间成为int类型。
 
         # 删除老数据。
@@ -94,26 +63,26 @@ def get_all_stocks(tmp_datetime):
 
     try:
         print('----', __file__ + ': 2: stock_sina_lhb_ggtj')
-        stock_sina_lhb_ggtj = ak.stock_sina_lhb_ggtj(recent_day="5")
+        lhb_data = ak.stock_sina_lhb_ggtj(recent_day="5")
 
-        stock_sina_lhb_ggtj.columns = ['code', 'name', 'ranking_times', 'sum_buy', 'sum_sell', 'net_amount', 'buy_seat',
-                                       'sell_seat']
+        lhb_data.columns = ['code', 'name', 'ranking_times', 'sum_buy', 'sum_sell', 'net_amount', 'buy_seat',
+                            'sell_seat']
 
-        stock_sina_lhb_ggtj = stock_sina_lhb_ggtj.loc[stock_sina_lhb_ggtj["code"].apply(stock_a)].loc[
-            stock_sina_lhb_ggtj["name"].apply(stock_a_filter_st)]
+        lhb_data = lhb_data.loc[lhb_data[common.unify_names("code")].apply(common.stock_a)]\
+                           .loc[lhb_data[common.unify_names("name")].apply(common.stock_a_filter_st)]
 
-        stock_sina_lhb_ggtj.set_index('code', inplace=True)
+        lhb_data.set_index('code', inplace=True)
         # data_sina_lhb.drop('index', axis=1, inplace=True)
         # 删除老数据。
-        stock_sina_lhb_ggtj['date'] = datetime_int  # 修改时间成为int类型。
+        lhb_data['date'] = datetime_int  # 修改时间成为int类型。
 
         # 删除老数据。
         del_sql = " DELETE FROM `stock_sina_lhb_ggtj` where `date` = '%s' " % datetime_int
         common.insert(del_sql)
 
-        print('stock_sina_lhb_ggtj count: %s'%len(stock_sina_lhb_ggtj))
+        print('lhb_data count: %s'%len(lhb_data))
 
-        common.insert_db(stock_sina_lhb_ggtj, "stock_sina_lhb_ggtj", True, "`date`,`code`")
+        common.insert_db(lhb_data, "stock_sina_lhb_ggtj", True, "`date`,`code`")
 
     except Exception as e:
         print("error :", e)
@@ -128,27 +97,23 @@ def get_all_stocks(tmp_datetime):
 
     try:
         print('----', __file__ + ': 3: stock_dzjy_mrtj')
-        stock_dzjy_mrtj = ak.stock_dzjy_mrtj(start_date=datetime_str, end_date=datetime_str)
+        dzjy_data = ak.stock_dzjy_mrtj(start_date=datetime_str, end_date=datetime_str)
 
-        stock_dzjy_mrtj.columns = ['index', 'trade_date', 'code', 'name', 'quote_change', 'close_price', 'average_price',
-                                   'overflow_rate', 'trade_number', 'sum_volume', 'sum_turnover',
-                                   'turnover_market_rate']
+        dzjy_data.columns = [common.unify_names(i) for i in dzjy_data.columns]
 
-        stock_dzjy_mrtj.set_index('code', inplace=True)
-        # data_sina_lhb.drop('index', axis=1, inplace=True)
+        dzjy_data.set_index('code', inplace=True)
         # 删除老数据。
-        stock_dzjy_mrtj['date'] = datetime_int  # 修改时间成为int类型。
-        stock_dzjy_mrtj.drop('trade_date', axis=1, inplace=True)
-        stock_dzjy_mrtj.drop('index', axis=1, inplace=True)
+        dzjy_data['date'] = datetime_int  # 修改时间成为int类型。
+        dzjy_data.drop('index', axis=1, inplace=True)
 
         # 数据保留2位小数
         try:
-            stock_dzjy_mrtj = stock_dzjy_mrtj.loc[stock_dzjy_mrtj["code"].apply(stock_a)].loc[
-                stock_dzjy_mrtj["name"].apply(stock_a_filter_st)]
+            dzjy_data = dzjy_data.loc[dzjy_data[common.unify_names("code")].apply(common.stock_a)]\
+                                 .loc[dzjy_data[common.unify_names("name")].apply(common.stock_a_filter_st)]
 
-            stock_dzjy_mrtj["average_price"] = stock_dzjy_mrtj["average_price"].round(2)
-            stock_dzjy_mrtj["overflow_rate"] = stock_dzjy_mrtj["overflow_rate"].round(4)
-            stock_dzjy_mrtj["turnover_market_rate"] = stock_dzjy_mrtj["turnover_market_rate"].round(6)
+            dzjy_data["average_price"] = dzjy_data["average_price"].round(2)
+            dzjy_data["overflow_rate"] = dzjy_data["overflow_rate"].round(4)
+            dzjy_data["turnover_market_rate"] = dzjy_data["turnover_market_rate"].round(6)
         except Exception as e:
             print("round error :", e)
 
@@ -156,9 +121,9 @@ def get_all_stocks(tmp_datetime):
         del_sql = " DELETE FROM `stock_dzjy_mrtj` where `date` = '%s' " % datetime_int
         common.insert(del_sql)
 
-        print('stock_dzjy_mrtj count: %s'%len(stock_dzjy_mrtj))
+        print('dzjy_data count: %s'%len(dzjy_data))
 
-        common.insert_db(stock_dzjy_mrtj, "stock_dzjy_mrtj", True, "`date`,`code`")
+        common.insert_db(dzjy_data, "stock_dzjy_mrtj", True, "`date`,`code`")
 
     except Exception as e:
         print("error :", e)

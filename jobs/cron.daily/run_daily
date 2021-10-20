@@ -12,9 +12,9 @@ export LC_CTYPE=zh_CN.UTF-8
 
 echo "" >> /data/logs/daily.${DATE}.log
 echo "" >> /data/logs/daily.${DATE}.log
-echo "###################"$DATETIME" 18h_daily_job.py ###################" >> /data/logs/daily.${DATE}.log
+echo "###################"$DATETIME" daily_job_at_17_30.py ###################" >> /data/logs/daily.${DATE}.log
 #增加获得今日全部数据和大盘数据
-/usr/local/bin/python3 /data/stock/jobs/18h_daily_job.py >> /data/logs/daily.${DATE}.log
+/usr/local/bin/python3 /data/stock/jobs/daily_job_at_17_30.py >> /data/logs/daily.${DATE}.log
 
 
 echo "" >> /data/logs/daily.${DATE}.log

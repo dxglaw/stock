@@ -14,38 +14,7 @@ import akshare as ak
 
 import MySQLdb
 
-# 600开头的股票是上证A股，属于大盘股
-# 600开头的股票是上证A股，属于大盘股，其中6006开头的股票是最早上市的股票，
-# 6016开头的股票为大盘蓝筹股；900开头的股票是上证B股；
-# 000开头的股票是深证A股，001、002开头的股票也都属于深证A股，
-# 其中002开头的股票是深证A股中小企业股票；
-# 200开头的股票是深证B股；
-# 300开头的股票是创业板股票；400开头的股票是三板市场股票。
-def stock_a(code):
-    # print(code)
-    # print(type(code))
-    # 上证A股  # 深证A股
-    if code.startswith('600') or code.startswith('6006') or code.startswith('601') or code.startswith('000') or code.startswith('001') or code.startswith('002'):
-        return True
-    else:
-        return False
-# 过滤掉 st 股票。
-def stock_a_filter_st(name):
-    # print(code)
-    # print(type(code))
-    # 上证A股  # 深证A股
-    if name.find("ST") == -1:
-        return True
-    else:
-        return False
 
-# 过滤价格，如果没有基本上是退市了。
-def stock_a_filter_price(latest_price):
-    # float 在 pandas 里面判断 空。
-    if np.isnan(latest_price):
-        return False
-    else:
-        return True
 
 ####### 3.pdf 方法。宏观经济数据
 # 接口全部有错误。只专注股票数据。
@@ -62,12 +31,12 @@ def stat_all(tmp_datetime):
         # print(data.index)
         # 解决ESP 小数问题。
         # data["esp"] = data["esp"].round(2)  # 数据保留2位小数
-        data.columns = ['index', 'code', 'name', 'latest_price', 'quote_change', 'ups_downs', 'volume', 'turnover',
-                        'amplitude', 'high', 'low', 'open', 'closed', 'quantity_ratio', 'turnover_rate', 'pe_dynamic',
+        data.columns = ['index', 'code', 'name', 'price', 'pct_change', 'change', 'volume', 'amount',
+                        'swing', 'high', 'low', 'open', 'pre-close', 'vol_ratio', 'turnover_ratio', 'pe_dynamic',
                         'pb']
 
-        data = data.loc[data["code"].apply(stock_a)].loc[data["name"].apply(stock_a_filter_st)].loc[
-            data["latest_price"].apply(stock_a_filter_price)]
+        data = data.loc[data["code"].apply(common.stock_a)].loc[data["name"].apply(common.stock_a_filter_st)].loc[
+            data["latest_price"].apply(common.stock_a_filter_price)]
         data['date'] = datetime_int  # 修改时间成为int类型。
 
         # 删除老数据。
