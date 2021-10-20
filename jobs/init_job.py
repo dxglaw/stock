@@ -69,9 +69,11 @@ def get_recent_hist(ndays=100):
         # if not downloaded, download and save to db
         min_days = max(30, ndays-10) # at least need 30-day data, ndays-10 in case there is no data for some dates
         n_dates_in_db = len(dates_list)
-        if (stop_date_int not in dates_list) or (n_dates_in_db < min_days):
+        noLatestData = stop_date_int not in dates_list  # data of stop_date_int is not in DB
+        noEnoughData = n_dates_in_db < min_days         # data in DB is not enough
+        if noLatestData or noEnoughData:
             # download and process data
-            print("    ", __file__, ": Download data for :", codes_list[i], n_dates_in_db)
+            print("    ", __file__, ": Download data for :", codes_list[i], n_dates_in_db, noLatestData)
             common.get_daily_hist(codes_list[i], start_date_int, stop_date_int)
         else:
             # print("    ", __file__, ": Data exist:", codes_list[i])
