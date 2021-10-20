@@ -424,14 +424,14 @@ def unify_names(raw_name):
         **dict.fromkeys(['最高', '最高价'], 'high'),
         **dict.fromkeys(['最低', '最低价'], 'low'),
         **dict.fromkeys(['今开', '开盘', '开盘价'], 'open'),
-        **dict.fromkeys(['今收', '收盘', '收盘价'], 'close'),
+        **dict.fromkeys(['今收', '收盘', '收盘价', 'close_price'], 'close'),
         **dict.fromkeys(['昨收'], 'pre-close'),
         **dict.fromkeys(['涨跌幅', 'quote_change'], 'pct_change'),
         **dict.fromkeys(['涨跌额', 'ups_downs'], 'change'),
         **dict.fromkeys(['振幅', 'amplitude'], 'swing'),
         '成交量': 'volume',
         **dict.fromkeys(['成交额', 'turnover'], 'amount'),
-        '成交均价': 'avg_price',
+        **dict.fromkeys(['成交均价', 'average_price'], 'avg_price'),
         **dict.fromkeys(['量比', 'quantity_ratio'], 'vol_ratio'),
         **dict.fromkeys(['换手率', 'turnover_rate'], 'turnover_ratio'),
         **dict.fromkeys(['市盈率-动态', '动态市盈率'], 'pe_dynamic'),
@@ -446,7 +446,7 @@ def unify_names(raw_name):
         '成交笔数': 'trade_number',
         '成交总量': 'sum_volume',
         '成交总额': 'sum_amount',
-        '成交总额/流通市值': 'sum_turnover'
+        **dict.fromkeys(['成交总额/流通市值', 'turnover_market_rate'], 'sum_turnover_ratio')
     }
     try:
         return mapping[raw_name]

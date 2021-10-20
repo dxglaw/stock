@@ -22,13 +22,27 @@ def stat_all_lite_buy(tmp_datetime):
     # J大于100时为超买，小于10时为超卖。
     # 当六日指标上升到达80时，表示股市已有超买现象
     # 当CCI＞﹢100 时，表明股价已经进入非常态区间——超买区间，股价的异动现象应多加关注。
-    sql_1 = """
-            SELECT `date`, `code`, `name`, `ups_downs`, `latest_price`, `open`, `high`, `low`, 
-                   `closed`, `volume`, `turnover_rate`, `turnover`, `pe_dynamic`, `pb`,
-                   `kdjj`,`rsi_6`,`cci`
-                   FROM `guess_indicators_daily` WHERE `date` = %s 
-                   and kdjk >= 80 and kdjd >= 70 and kdjj >= 100  and rsi_6 >= 80  and cci >= 100
-    """  # and kdjj > 100 and rsi_6 > 80  and cci > 100 # 调整参数，提前获得股票增长。
+    selectCols = "`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`"\
+                 %( common.unify_names("date"),\
+                    common.unify_names("code"),\
+                    common.unify_names("name"),\
+                    common.unify_names("ups_downs"),\
+                    common.unify_names("latest_price"),\
+                    common.unify_names("open"),\
+                    common.unify_names("high"),\
+                    common.unify_names("low"),\
+                    common.unify_names("pre-closed"),\
+                    common.unify_names("volume"),\
+                    common.unify_names("turnover_rate"),\
+                    common.unify_names("turnover"),\
+                    common.unify_names("pe_dynamic"),\
+                    common.unify_names("pb"),\
+                    common.unify_names("kdjj"),\
+                    common.unify_names("rsi_6"),\
+                    common.unify_names("cci"))
+    sql_1 = "SELECT " + selectCols + " FROM `guess_indicators_daily` WHERE `date` = %s " + \
+            "and kdjk >= 80 and kdjd >= 70 and kdjj >= 100  and rsi_6 >= 80  and cci >= 100"
+            # and kdjj > 100 and rsi_6 > 80  and cci > 100 # 调整参数，提前获得股票增长。
 
     try:
         # 删除老数据。
@@ -57,13 +71,26 @@ def stat_all_lite_sell(tmp_datetime):
     # J大于100时为超买，小于10时为超卖。
     # 当六日强弱指标下降至20时，表示股市有超卖现象
     # 当CCI＜﹣100时，表明股价已经进入另一个非常态区间——超卖区间，投资者可以逢低吸纳股票。
-    sql_1 = """
-            SELECT `date`, `code`, `name`, `ups_downs`, `latest_price`, `open`, `high`, `low`, 
-                   `closed`, `volume`, `turnover_rate`, `turnover`, `pe_dynamic`, `pb`,
-                   `kdjj`,`rsi_6`,`cci`
-                   FROM `guess_indicators_daily` WHERE `date` = %s 
-                   and kdjk <= 20 and kdjd <= 30 and kdjj <= 10  and rsi_6 <= 20  and cci <= -100
-    """
+    selectCols = "`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`"\
+                 %( common.unify_names("date"),\
+                    common.unify_names("code"),\
+                    common.unify_names("name"),\
+                    common.unify_names("ups_downs"),\
+                    common.unify_names("latest_price"),\
+                    common.unify_names("open"),\
+                    common.unify_names("high"),\
+                    common.unify_names("low"),\
+                    common.unify_names("pre-closed"),\
+                    common.unify_names("volume"),\
+                    common.unify_names("turnover_rate"),\
+                    common.unify_names("turnover"),\
+                    common.unify_names("pe_dynamic"),\
+                    common.unify_names("pb"),\
+                    common.unify_names("kdjj"),\
+                    common.unify_names("rsi_6"),\
+                    common.unify_names("cci"))
+    sql_1 = "SELECT " + selectCols + " FROM `guess_indicators_daily` WHERE `date` = %s " + \
+            "and kdjk <= 20 and kdjd <= 30 and kdjj <= 10  and rsi_6 <= 20  and cci <= -100"
 
     try:
         # 删除老数据。
@@ -83,6 +110,7 @@ def stat_all_lite_sell(tmp_datetime):
 
 # 批处理数据。
 def stat_all_batch(tmp_datetime):
+    print('----', __file__ + ': 0: stat_all_batch')
     datetime_str = (tmp_datetime).strftime("%Y-%m-%d")
     datetime_int = (tmp_datetime).strftime("%Y%m%d")
     print("datetime_str:", datetime_str, "    datetime_int:", datetime_int)
@@ -96,11 +124,25 @@ def stat_all_batch(tmp_datetime):
 
     # 查询今日满足股票数据。剔除数据：创业板股票数据，中小板股票数据，所有st股票
     # #`code` not like '002%' and `code` not like '300%'  and `name` not like '%st%'
-    sql_1 = """ 
-                SELECT `date`,`code`,`name`,`latest_price`,`quote_change`,`ups_downs`,`volume`,`turnover`,
-                        `amplitude`,`high`,`low`,`open`,`closed`,`quantity_ratio`,`turnover_rate`,`pe_dynamic`,`pb`
-                FROM stock_zh_ah_name WHERE `date` = %s and `open` > 0
-                """
+    selectCols = "`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`,`%s`"\
+                    %(common.unify_names("date"),\
+                      common.unify_names("code"),\
+                      common.unify_names("name"),\
+                      common.unify_names("latest_price"),\
+                      common.unify_names("quote_change"),\
+                      common.unify_names("ups_downs"),\
+                      common.unify_names("volume"),\
+                      common.unify_names("turnover"),\
+                      common.unify_names("amplitude"),\
+                      common.unify_names("high"),\
+                      common.unify_names("low"),\
+                      common.unify_names("open"),\
+                      common.unify_names("pre-close"),\
+                      common.unify_names("quantity_ratio"),\
+                      common.unify_names("turnover_rate"),\
+                      common.unify_names("pe_dynamic"),\
+                      common.unify_names("pb"))
+    sql_1 = "SELECT " + selectCols + " FROM stock_zh_ah_name WHERE `date` = %s and `open` > 0 "
     print("Get a list of all stocks by sql_1:\n", sql_1)
     stocks_list = pd.read_sql(sql=sql_1, con=common.engine(), params=[datetime_int])
     stocks_list = stocks_list.drop_duplicates(subset="code", keep="last")
@@ -235,7 +277,7 @@ def concat_guess_data(stocks_list, stock_column):
         elif col == 'code':
             tmp_dic[col] = stocks_list["code"]
         else:
-            tmp_dic[col] = stocks_list["latest_price"]
+            tmp_dic[col] = stocks_list["price"]
     # print("----------tmp_dic: ", tmp_dic)
     stock_guess = pd.DataFrame(tmp_dic, index=stocks_list.index.values)
     # print(stock_guess.columns.values)

@@ -8,7 +8,7 @@
             "name": "test_stock_zh_a_spot",
             "type": "python",
             "request": "launch",
-            "module": "jobs.init_job",
+            "module": "jobs.guess_indicators_daily_job",
             "justMyCode": false
         }
     ]
