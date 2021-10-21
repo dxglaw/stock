@@ -111,9 +111,12 @@ def get_all_stocks(tmp_datetime):
             dzjy_data = dzjy_data.loc[dzjy_data[common.unify_names("code")].apply(common.stock_a)]\
                                  .loc[dzjy_data[common.unify_names("name")].apply(common.stock_a_filter_st)]
 
-            dzjy_data["average_price"] = dzjy_data["average_price"].round(2)
-            dzjy_data["overflow_rate"] = dzjy_data["overflow_rate"].round(4)
-            dzjy_data["turnover_market_rate"] = dzjy_data["turnover_market_rate"].round(6)
+            dzjy_data[common.unify_names("average_price")] = \
+                dzjy_data[common.unify_names("average_price")].round(2)
+            dzjy_data[common.unify_names("overflow_rate")] = \
+                dzjy_data[common.unify_names("overflow_rate")].round(4)
+            dzjy_data[common.unify_names("turnover_market_rate")] = \
+                dzjy_data[common.unify_names("turnover_market_rate")].round(6)
         except Exception as e:
             print("round error :", e)
 

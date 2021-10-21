@@ -445,7 +445,7 @@ def unify_names(raw_name):
         '折溢率': 'overflow_rate',
         '成交笔数': 'trade_number',
         '成交总量': 'sum_volume',
-        '成交总额': 'sum_amount',
+        **dict.fromkeys(['成交总额', 'sum_turnover'], 'sum_amount'),
         **dict.fromkeys(['成交总额/流通市值', 'turnover_market_rate'], 'sum_turnover_ratio')
     }
     try:
