@@ -300,12 +300,28 @@ def apply_guess(tmp, stock_column):
     date = tmp["date"]
     code = tmp["code"]
     date_end = datetime.datetime.strptime(date, "%Y%m%d")
-    date_start = (date_end + datetime.timedelta(days=-100)).strftime("%Y-%m-%d")
-    date_end = date_end.strftime("%Y-%m-%d")
-    # print(code, date_start, date_end)
-    # open, high, close, low, volume, price_change, p_change, ma5, ma10, ma20, v_ma5, v_ma10, v_ma20, turnover
+
     # 使用缓存方法。加快计算速度。
-    stock = common.get_hist_data_cache(code, date_start, date_end)
+    # date_start_str = (date_end + datetime.timedelta(days=-100)).strftime("%Y-%m-%d")
+    # date_end_str = date_end.strftime("%Y-%m-%d")
+    # stock1 = common.get_hist_data_cache(code, date_start_str, date_end_str)
+    start_date_int = (date_end + datetime.timedelta(days=-100)).strftime("%Y%m%d")
+    stop_date_int = date_end.strftime("%Y%m%d")
+    stock = common.get_daily_hist_from_db(code, start_date_int, stop_date_int, ['*'])
+    stock = stock.sort_index(0)  # 将数据按照日期排序
+    latest_day = stock['date'].values[-1]
+    stock.drop('code', axis=1, inplace=True)    # do not need code
+    stock.set_index('date', inplace=True)
+    # conver to double
+    for i in stock.columns:
+        stock[i] = stock[i].apply(pd.to_numeric, errors='ignore')
+    if stop_date_int != latest_day:
+        new_start_date_int = datetime.datetime.strptime(latest_day, "%Y%m%d")
+        new_start_date_int = new_start_date_int + datetime.timedelta(days=1)
+        new_start_date_int = new_start_date_int.strftime("%Y%m%d")
+        new_stock = common.download_daily_hist_to_db(code, new_start_date_int, stop_date_int)
+        new_stock.drop('code', axis=1, inplace=True)    # do not need code
+        stock = pd.concat([stock, new_stock])
     # 设置返回数组。
     stock_data_list = []
     stock_name_list = []
@@ -335,7 +351,6 @@ def apply_guess(tmp, stock_column):
     # stockStat = stockstats.StockDataFrame.retype(pd.read_csv('002032.csv'))
     stockStat = stockstats.StockDataFrame.retype(stock)
 
-    # print("-------------------------- print result --------------------------")
     for col in stock_column:
         if col == 'date':
             stock_data_list.append(date)
@@ -345,7 +360,10 @@ def apply_guess(tmp, stock_column):
             stock_name_list.append('code')
         else:
             # 将数据的最后一个返回。
-            tmp_val = stockStat[col].tail(1).values[0]
+            try:
+                tmp_val = stockStat[col].tail(1).values[0]
+            except  Exception as e:
+                print("    ", __file__, ": stockStat:", e)
             if np.isinf(tmp_val):  # 解决值中存在INF问题。
                 tmp_val = 0
             if np.isnan(tmp_val):  # 解决值中存在NaN问题。

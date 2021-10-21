@@ -246,7 +246,7 @@ def stock_a_filter_price(latest_price):
     else:
         return True
 
-def get_daily_hist(code, start_date_int, stop_date_int):
+def download_daily_hist_to_db(code, start_date_int, stop_date_int):
     '''
     Get daily hist of one stock from start_date_int to stop_date_int.
     '''
@@ -285,6 +285,36 @@ def get_daily_hist(code, start_date_int, stop_date_int):
         insert_db(hist_daily, TBL_NAME_DAILY_HIST, True, prim_keys)
     except  Exception as e:
         print("    ", __file__, ": insert_db():", e)
+    return hist_daily
+
+def get_daily_hist_from_db(code, start_date_int, stop_date_int, columns=['*']):
+    '''
+    Get daily hist from db
+    '''
+    uname_date = unify_names("date")
+    uname_code = unify_names("code")
+    eng = engine()
+    sql_tpl = "SELECT %s FROM `%s` WHERE `%s`=%s AND `%s`>=%s AND `%s`<=%s"
+    # Get data from db
+    if '*' in columns:
+        columns = '*'
+    else:
+        columns = ",".join(["`"+i+"`" for i in columns])
+    sql_cmd = sql_tpl%(columns,\
+                       TBL_NAME_DAILY_HIST,\
+                       uname_code,\
+                       code,\
+                       uname_date,\
+                       start_date_int,\
+                       uname_date,\
+                       stop_date_int)
+    data_list = []
+    with eng.connect() as conn:
+        try:
+            data_list = pd.read_sql(sql_cmd, conn)
+        except  Exception as e:
+            print("    ", __file__, ": pd.read_sql():", e)
+    return data_list
 
 def get_latest_stocks_list():
     '''
