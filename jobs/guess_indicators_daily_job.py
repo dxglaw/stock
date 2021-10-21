@@ -17,7 +17,6 @@ def stat_all_lite_buy(tmp_datetime):
     datetime_int = (tmp_datetime).strftime("%Y%m%d")
     print("datetime_str:", datetime_str, "    datetime_int:", datetime_int)
 
-
     # K值在80以上，D值在70以上，J值大于90时为超买。
     # J大于100时为超买，小于10时为超卖。
     # 当六日指标上升到达80时，表示股市已有超买现象
@@ -31,7 +30,7 @@ def stat_all_lite_buy(tmp_datetime):
                     common.unify_names("open"),\
                     common.unify_names("high"),\
                     common.unify_names("low"),\
-                    common.unify_names("pre-closed"),\
+                    common.unify_names("pre-close"),\
                     common.unify_names("volume"),\
                     common.unify_names("turnover_rate"),\
                     common.unify_names("turnover"),\
@@ -80,7 +79,7 @@ def stat_all_lite_sell(tmp_datetime):
                     common.unify_names("open"),\
                     common.unify_names("high"),\
                     common.unify_names("low"),\
-                    common.unify_names("pre-closed"),\
+                    common.unify_names("pre-close"),\
                     common.unify_names("volume"),\
                     common.unify_names("turnover_rate"),\
                     common.unify_names("turnover"),\
