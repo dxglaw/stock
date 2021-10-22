@@ -127,13 +127,13 @@ STOCK_WEB_DATA_LIST.append(
         columns=[common.unify_names(i) for i in 
                  ['date','code','name','latest_price','quote_change','ups_downs',
                   'adx', 'adxr', 'boll', 'boll_lb', 'boll_ub', 'cci', 'cci_20', 'close_-1_r',
-                  'close_-2_r', 'code', 'cr', 'cr-ma1', 'cr-ma2', 'cr-ma3', 'date', 'dma', 'dx',
+                  'close_-2_r', 'cr', 'cr-ma1', 'cr-ma2', 'cr-ma3', 'dma', 'dx',
                   'kdjd', 'kdjj', 'kdjk', 'macd', 'macdh', 'macds', 'mdi', 'pdi',
                   'rsi_12', 'rsi_6', 'trix', 'trix_9_sma', 'vr', 'vr_6_sma', 'wr_10', 'wr_6']
                 ],
         column_names=['日期','代码','名称','最新价','涨跌幅','涨跌额',
                       'adx', 'adxr', 'boll', 'boll_lb', 'boll_ub', 'cci', 'cci_20', 'close_-1_r',
-                    'close_-2_r', 'code', 'cr', 'cr-ma1', 'cr-ma2', 'cr-ma3', 'date', 'dma', 'dx',
+                    'close_-2_r', 'cr', 'cr-ma1', 'cr-ma2', 'cr-ma3', 'dma', 'dx',
                     'kdjd', 'kdjj', 'kdjk', 'macd', 'macdh', 'macds', 'mdi', 'pdi',
                     'rsi_12', 'rsi_6', 'trix', 'trix_9_sma', 'vr', 'vr_6_sma', 'wr_10', 'wr_6'],
         primary_key=[],
