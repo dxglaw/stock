@@ -59,7 +59,9 @@ def get_recent_hist(ndays=100):
         noEnoughData = n_dates_in_db < min_days         # data in DB is not enough
         if noLatestData or noEnoughData:
             # download and process data
-            print("    ", __file__, ": Download data for :", codes_list[i], n_dates_in_db, noLatestData)
+            print("    ", __file__, ": Download data for :", codes_list[i], \
+                  n_dates_in_db, noLatestData, \
+                  "(", i, "of", n_stocks, ")")
             common.download_daily_hist_to_db(codes_list[i], start_date_int, stop_date_int)
         else:
             # print("    ", __file__, ": Data exist:", codes_list[i])

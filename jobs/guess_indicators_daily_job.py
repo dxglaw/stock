@@ -5,7 +5,6 @@
 import libs.common as common
 import pandas as pd
 import numpy as np
-import math
 import datetime
 import stockstats
 
@@ -388,10 +387,13 @@ def apply_guess(tmp, stock_column):
 
 
 # main函数入口
-if __name__ == '__main__':
-    # 使用方法传递。
-    tmp_datetime = common.run_with_args(stat_all_batch)
-    # 二次筛选数据。直接计算买卖股票数据。
-    tmp_datetime = common.run_with_args(stat_all_lite_buy)
-    tmp_datetime = common.run_with_args(stat_all_lite_sell)
-
+if __name__ == '__main__':  
+    today = datetime.datetime.now()
+    if common.is_trade_day(today.year, today.month, today.day):
+        # calculate stats
+        tmp_datetime = common.run_with_args(stat_all_batch)
+        # 二次筛选数据。直接计算买卖股票数据。
+        tmp_datetime = common.run_with_args(stat_all_lite_buy)
+        tmp_datetime = common.run_with_args(stat_all_lite_sell)
+    else:
+        print('----', __file__ + ': Not a trade day:', today)
