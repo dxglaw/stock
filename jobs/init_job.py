@@ -68,5 +68,5 @@ if __name__ == '__main__':
     # wait for db
     wait_for_db()
     # initialize data
-    # get_recent_hist(100)
+    get_recent_hist(100)
     

@@ -100,17 +100,14 @@ def get_all_stocks(tmp_datetime):
         dzjy_data = ak.stock_dzjy_mrtj(start_date=datetime_str, end_date=datetime_str)
 
         dzjy_data.columns = [common.unify_names(i) for i in dzjy_data.columns]
-
+        dzjy_data = dzjy_data.loc[dzjy_data[common.unify_names("code")].apply(common.stock_a)]\
+                             .loc[dzjy_data[common.unify_names("name")].apply(common.stock_a_filter_st)]
         dzjy_data.set_index('code', inplace=True)
-        # 删除老数据。
         dzjy_data['date'] = datetime_int  # 修改时间成为int类型。
         dzjy_data.drop('index', axis=1, inplace=True)
 
         # 数据保留2位小数
         try:
-            dzjy_data = dzjy_data.loc[dzjy_data[common.unify_names("code")].apply(common.stock_a)]\
-                                 .loc[dzjy_data[common.unify_names("name")].apply(common.stock_a_filter_st)]
-
             dzjy_data[common.unify_names("average_price")] = \
                 dzjy_data[common.unify_names("average_price")].round(2)
             dzjy_data[common.unify_names("overflow_rate")] = \
@@ -128,6 +125,18 @@ def get_all_stocks(tmp_datetime):
 
         common.insert_db(dzjy_data, "stock_dzjy_mrtj", True, "`date`,`code`")
 
+    except Exception as e:
+        print("error :", e)
+
+    # daily hist
+    try:
+        print('----', __file__ + ': 4: download_daily_hist_to_db')
+        (start_date, stocks_list) = common.get_latest_stocks_list()
+        n_stocks = stocks_list.shape[0]
+        codes_list = stocks_list["code"].tolist()
+        for i in range(n_stocks):
+            print("    ", __file__, ": Download data for :", codes_list[i], ". ", i, 'of', n_stocks)
+            common.download_daily_hist_to_db(codes_list[i], datetime_int, datetime_int)
     except Exception as e:
         print("error :", e)
 

@@ -316,6 +316,7 @@ def apply_guess(tmp, stock_column):
     for i in stock.columns:
         stock[i] = stock[i].apply(pd.to_numeric, errors='ignore')
     if stop_date_int != latest_day:
+        print('\t\t Latest data not found in DB for:', code)
         new_start_date_int = datetime.datetime.strptime(latest_day, "%Y%m%d")
         new_start_date_int = new_start_date_int + datetime.timedelta(days=1)
         new_start_date_int = new_start_date_int.strftime("%Y%m%d")
