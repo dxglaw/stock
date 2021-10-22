@@ -101,20 +101,20 @@ def insert_other_db(to_db, data, table_name, write_index, primary_keys, rename_c
 # 插入数据。
 def insert(sql, params=()):
     with conn() as db:
-        print("    ", __file__, " : ", "insert : " + sql)
         try:
             db.execute(sql, params)
         except  Exception as e:
+            print("    ", __file__, " : ", "insert : " + sql)
             print("    ", __file__, " : ", "insert : error : ", e)
 
 
 # 查询数据
 def select(sql, params=()):
     with conn() as db:
-        print("    ", __file__, " : ", "select :" + sql)
         try:
             db.execute(sql, params)
         except  Exception as e:
+            print("    ", __file__, " : ", "select :" + sql)
             print("    ", __file__, " : ", "select : error :", e)
         result = db.fetchall()
         return result
@@ -123,10 +123,10 @@ def select(sql, params=()):
 # 计算数量
 def select_count(sql, params=()):
     with conn() as db:
-        print("    ", __file__, " : ", "select sql: " + sql)
         try:
             db.execute(sql, params)
         except  Exception as e:
+            print("    ", __file__, " : ", "select sql: " + sql)
             print("    ", __file__, " : ", "error : ", e)
         result = db.fetchall()
         # 只有一个数组中的第一个数据
