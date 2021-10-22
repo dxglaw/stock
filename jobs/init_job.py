@@ -50,7 +50,8 @@ def get_recent_hist(ndays=100):
     for i in range(n_stocks):
         # check data is already downloaded
         dates_list = common.get_daily_hist_from_db(codes_list[i], start_date_int, stop_date_int, [uname_date])
-        dates_list = dates_list[uname_date].to_list()
+        if len(dates_list) != 0:
+            dates_list = dates_list[uname_date].to_list()
         # if not downloaded, download and save to db
         min_days = max(30, ndays-10) # at least need 30-day data, ndays-10 in case there is no data for some dates
         n_dates_in_db = len(dates_list)
