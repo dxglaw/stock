@@ -15,7 +15,7 @@ echo "" >> /data/logs/run_init.log
 echo $DATE >> /data/logs/run_init.log
 
 echo "###### Wait 120 second, mysqldb is starting ." >> /data/logs/run_init.log
-sleep 120
+sleep 10
 
 echo "###### init_job.py" >> /data/logs/run_init.log
 /usr/local/bin/python3 /data/stock/jobs/init_job.py  >> /data/logs/run_init.log
