@@ -53,6 +53,8 @@ RUN apt-get update && apt-get install -y net-tools procps gcc make python3-dev d
     pip3 install tornado torndb && \
     pip3 install bokeh stockstats sklearn && \
     pip3 install chinesecalendar && \
+    pip3 install jupyter && \
+    pip install mplfinance && \
     apt-get --purge remove -y gcc make python3-dev default-libmysqlclient-dev libxml2-dev && \
     rm -rf /root/.cache/* && apt-get clean && apt-get autoremove -y
 
