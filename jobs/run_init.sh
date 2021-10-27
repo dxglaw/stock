@@ -25,9 +25,9 @@ echo "###### printenv" >> /data/logs/run_init.log
 # 解决环境变量输出问题。
 printenv | grep -v "no_proxy" >> /etc/environment
 
-echo "###### First time run_daily." >> /data/logs/run_init.log
+# echo "###### First time run_daily." >> /data/logs/run_init.log
 # 第一次后台执行日数据。
-nohup bash /data/stock/jobs/cron.daily/run_daily &
+# nohup bash /data/stock/jobs/cron.daily/run_daily &
 
 echo "###### Start cron service." >> /data/logs/run_init.log
 #启动cron服务。在前台
