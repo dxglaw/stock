@@ -9,7 +9,7 @@ mkdir -p /data/logs/tensorflow
 
 
 
-DATE=`date +%Y-%m-%d:%H:%M:%S`
+DATE=`date "+%Y-%m-%d %H:%M:%S"`
 
 echo "" >> /data/logs/run_init.log
 echo $DATE >> /data/logs/run_init.log
