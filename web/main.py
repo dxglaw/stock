@@ -42,7 +42,7 @@ class Application(tornado.web.Application):
             xsrf_cookies=False,  # True,
             # cookie加密
             cookie_secret="027bb1b670eddf0392cdda8709268a17b58b7",
-            debug=True,
+            debug=False,    #True,
         )
         super(Application, self).__init__(handlers, **settings)
         # Have one global connection to the blog DB across all handlers
