@@ -60,8 +60,9 @@ if [ $# == 1 ] ; then
     #  测试使用，自己需注册，申请：https://tushare.pro/user/token
 
     docker run -itd --link=mysqldb --name stock  \
-      -e 'MYSQL_USER'='pythonstock' -e 'MYSQL_PWD'='281208,,dxg' -e 'MYSQL_DB'='pythonstock' \
+      -e 'MYSQL_USER'='pythonstock' -e 'MYSQL_PWD'='password' -e 'MYSQL_DB'='pythonstock' \
       -e LANG=zh_CN.UTF-8 -e LC_CTYPE=zh_CN.UTF-8 -e PYTHONIOENCODING=utf-8 \
+      -e JUPYTER_TOKEN=password \
       -p 8888:8888 -p 9999:9999 --restart=always \
       -v ${PWD}/jobs:/data/stock/jobs \
       -v ${PWD}/libs:/data/stock/libs \
@@ -75,7 +76,7 @@ else
     echo "############# run online ############# "
     # /data/stock 是代码目录 -v /data/stock:/data/stock 是开发模式。
     docker run -itd --link=mysqldb --name stock  \
-      -e 'MYSQL_USER'='pythonstock' -e 'MYSQL_PWD'='281208,,dxg' -e 'MYSQL_DB'='pythonstock' \
+      -e 'MYSQL_USER'='pythonstock' -e 'MYSQL_PWD'='password' -e 'MYSQL_DB'='pythonstock' \
       -p 8888:8888 -p 9999:9999 --restart=always \
        dxglaw/pythonstock:latest
     exit 1;
