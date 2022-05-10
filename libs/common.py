@@ -246,45 +246,54 @@ def stock_a_filter_price(latest_price):
     else:
         return True
 
-def download_daily_hist_to_db(code, start_date_int, stop_date_int):
+def download_daily_hist_to_db(code, start_date_int, stop_date_int, max_tries=5):
     '''
     Get daily hist of one stock from start_date_int to stop_date_int.
     '''
     uname_date = unify_names("date")
     uname_code = unify_names("code")
-    try:
-        # download
-        hist_daily = ak.stock_zh_a_hist(symbol=code,\
-                                        start_date=start_date_int,\
-                                        end_date=stop_date_int,\
-                                        adjust="")
-        # unify column names
-        hist_daily.columns = [unify_names(i) for i in hist_daily.columns]
-        # convert date format form yyyy-mm-dd to yyyymmdd
-        hist_daily[uname_date] = hist_daily[uname_date].apply(lambda x: x.replace("-", ""))
-        # add code
-        hist_daily[uname_code] = code
-        # set date as index
-        hist_daily.set_index(uname_date, inplace=True)
-    except  Exception as e:
-        print("    ", __file__, ": ak.stock_zh_a_hist():", e)
+
+    # download
+    hist_daily = []
+    n_try = 0
+    while n_try < max_tries:
+        try:
+            hist_daily = ak.stock_zh_a_hist(symbol=code,\
+                                            start_date=start_date_int,\
+                                            end_date=stop_date_int,\
+                                            adjust="")
+            # unify column names
+            hist_daily.columns = [unify_names(i) for i in hist_daily.columns]
+            # convert date format form yyyy-mm-dd to yyyymmdd
+            hist_daily[uname_date] = hist_daily[uname_date].apply(lambda x: x.replace("-", ""))
+            # add code
+            hist_daily[uname_code] = code
+            # set date as index
+            hist_daily.set_index(uname_date, inplace=True)
+            break
+        except  Exception as e:
+            n_try += 1
+            print("    ", __file__, ": ak.stock_zh_a_hist():", e, " Number of tries: ", n_try)
+            time.sleep(10*n_try)
+
     # insert to db
-    try:
-        # delete data already downloaded before
-        sql_del = "DELETE FROM `%s` WHERE `%s`=%s AND `%s`>=%s AND `%s`<=%s"
-        sql_cmd = sql_del%(TBL_NAME_DAILY_HIST,\
-                            uname_code,\
-                            code,\
-                            uname_date,\
-                            start_date_int,\
-                            uname_date,\
-                            stop_date_int)
-        insert(sql_cmd)
-        # insert complete data just downloaded
-        prim_keys = "`%s`,`%s`"%(uname_date, uname_code)
-        insert_db(hist_daily, TBL_NAME_DAILY_HIST, True, prim_keys)
-    except  Exception as e:
-        print("    ", __file__, ": insert_db():", e)
+    if hist_daily == []:
+        try:
+            # delete data already downloaded before
+            sql_del = "DELETE FROM `%s` WHERE `%s`=%s AND `%s`>=%s AND `%s`<=%s"
+            sql_cmd = sql_del%(TBL_NAME_DAILY_HIST,\
+                                uname_code,\
+                                code,\
+                                uname_date,\
+                                start_date_int,\
+                                uname_date,\
+                                stop_date_int)
+            insert(sql_cmd)
+            # insert complete data just downloaded
+            prim_keys = "`%s`,`%s`"%(uname_date, uname_code)
+            insert_db(hist_daily, TBL_NAME_DAILY_HIST, True, prim_keys)
+        except  Exception as e:
+            print("    ", __file__, ": insert_db():", e)
     return hist_daily
 
 def get_daily_hist_from_db(code, start_date_int, stop_date_int, columns=['*']):
