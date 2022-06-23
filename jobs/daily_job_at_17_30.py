@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+import sys
 import libs.common as common
 import datetime
 import akshare as ak
@@ -137,7 +138,11 @@ def get_all_stocks(tmp_datetime):
 if __name__ == '__main__':
     # 执行数据初始化。
     # 使用方法传递。
-    today = datetime.datetime.now()
+    num_of_args = len(sys.argv)
+    if num_of_args > 1:
+        today = datetime.datetime.strptime(sys.argv[1], '%Y-%m-%d')
+    else:
+        today = datetime.datetime.now()
     if common.is_trade_day(today.year, today.month, today.day):
         tmp_datetime = common.run_with_args(get_all_stocks)
     else:

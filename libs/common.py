@@ -277,7 +277,7 @@ def download_daily_hist_to_db(code, start_date_int, stop_date_int, max_tries=5):
             time.sleep(10*n_try)
 
     # insert to db
-    if hist_daily == []:
+    if isinstance(hist_daily, pd.DataFrame):
         try:
             # delete data already downloaded before
             sql_del = "DELETE FROM `%s` WHERE `%s`=%s AND `%s`>=%s AND `%s`<=%s"
